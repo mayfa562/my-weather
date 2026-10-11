@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'providers/weather_provider.dart';
 import 'services/weather_service.dart';
@@ -13,29 +12,28 @@ import 'services/background_weather_service.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 
+const _weatherApiBaseUrl =
+    String.fromEnvironment('WEATHER_API_BASE_URL', defaultValue: '');
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Loads OPENWEATHER_API_KEY from the .env file (see .env.example).
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (_) {
-    // The app can still start so the user can see the UI before adding a key.
-  }
-  final apiKey = dotenv.env['OPENWEATHER_API_KEY'] ?? '';
-
-  runApp(WeatherApp(apiKey: apiKey));
+  runApp(const WeatherApp(apiBaseUrl: _weatherApiBaseUrl));
 
   // Do not hold the first Flutter frame behind platform services. Android
   // keeps its native launch window visible until that frame is drawn.
-  unawaited(_initializeServices(apiKey));
+  unawaited(_initializeServices(_weatherApiBaseUrl));
 }
 
-Future<void> _initializeServices(String apiKey) async {
+Future<void> _initializeServices(String apiBaseUrl) async {
+  // Remove API keys saved by older app versions. The worker URL is public,
+  // but the OpenWeatherMap credential must remain on the server.
+  await BackgroundWeatherService.removeLegacyApiKey();
+
   // Schedule cross-platform mobile background weather checks.
   // Android uses WorkManager; iOS uses its background task scheduler.
-  if (apiKey.isNotEmpty) {
-    await BackgroundWeatherService.initialize(apiKey);
+  if (apiBaseUrl.isNotEmpty) {
+    await BackgroundWeatherService.initialize(apiBaseUrl);
   }
 
   // Set up local notifications and ask for permission after the UI is ready.
@@ -44,15 +42,15 @@ Future<void> _initializeServices(String apiKey) async {
 }
 
 class WeatherApp extends StatelessWidget {
-  final String apiKey;
+  final String apiBaseUrl;
 
-  const WeatherApp({super.key, required this.apiKey});
+  const WeatherApp({super.key, required this.apiBaseUrl});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => WeatherProvider(
-        weatherService: WeatherService(apiKey: apiKey),
+        weatherService: WeatherService(apiBaseUrl: apiBaseUrl),
         locationService: LocationService(),
       ),
       child: Builder(

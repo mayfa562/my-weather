@@ -26,7 +26,7 @@ class WeatherToolsScreen extends StatelessWidget {
             Text(s.weatherToolsSubtitle, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
           ])),
           const SizedBox(height: AppSpacing.md),
-          _Tool(context, icon: Icons.radar_rounded, title: s.liveRadar, subtitle: s.liveRadarSubtitle, enabled: w != null, onTap: w == null ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => RadarScreen(latitude: w.latitude, longitude: w.longitude, cityName: w.cityName, apiKey: p.apiKey)))),
+          _Tool(context, icon: Icons.radar_rounded, title: s.liveRadar, subtitle: s.liveRadarSubtitle, enabled: w != null, onTap: w == null ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => RadarScreen(latitude: w.latitude, longitude: w.longitude, cityName: w.cityName, weatherApiBaseUrl: p.weatherApiBaseUrl)))),
           const SizedBox(height: AppSpacing.sm),
           _Tool(context, icon: Icons.star_rounded, title: s.savedCities, subtitle: s.savedLocationsCount(p.favorites.length), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()))),
           const SizedBox(height: AppSpacing.sm),

@@ -187,10 +187,9 @@ class WeatherProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Exposes the API key so screens (e.g. the radar map) can build
-  /// OpenWeatherMap tile URLs without the provider needing to know
-  /// anything about maps itself.
-  String get apiKey => _weatherService.apiKey;
+  /// Exposes the public proxy URL so screens (e.g. the radar map) can
+  /// load weather tiles without putting the provider key in the app.
+  String get weatherApiBaseUrl => _weatherService.apiBaseUrl;
 
   /// Fetches current weather + forecast for a searched city name.
   Future<void> fetchWeatherForCity(String cityName) async {
@@ -519,7 +518,8 @@ class WeatherProvider extends ChangeNotifier {
 
     _notificationService.showWeatherAlert(
       title: AppStrings(_languageCode).weatherUpdateTitle(updated.cityName),
-      body: AppStrings(_languageCode).localizeChangeDescription(changeDescription),
+      body: AppStrings(_languageCode)
+          .localizeChangeDescription(changeDescription),
     );
   }
 }

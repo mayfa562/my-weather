@@ -258,11 +258,17 @@ class AppStrings {
           'Ciudad no encontrada. Revisa la ortografía e inténtalo de nuevo.',
           'Ville introuvable. Vérifiez l’orthographe et réessayez.');
     }
-    if (value == 'Invalid API key. Check your .env file.') {
+    if (value == 'Weather service authorization failed.') {
       return _text(
-          'Invalid API key. Check your .env file.',
-          'Clave API no válida. Comprueba tu archivo .env.',
-          'Clé API invalide. Vérifiez votre fichier .env.');
+          'Weather service authorization failed.',
+          'La autorización del servicio meteorológico falló.',
+          'L’autorisation du service météo a échoué.');
+    }
+    if (value == 'Weather service rate limit reached. Try again shortly.') {
+      return _text(
+          value,
+          'Se alcanzó el límite del servicio meteorológico. Inténtalo pronto.',
+          'Limite du service météo atteinte. Réessayez bientôt.');
     }
     if (value == 'Network error: could not reach the weather service.') {
       return _text(

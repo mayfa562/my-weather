@@ -43,7 +43,7 @@ class AppDrawer extends StatelessWidget {
           Expanded(child: ListView(padding: const EdgeInsets.symmetric(horizontal: 10), children: [
             _DrawerItem(icon: Icons.home_rounded, label: strings.home, selected: true, onTap: () => Navigator.pop(context)),
             _DrawerItem(icon: Icons.star_rounded, label: strings.starredCities, onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen())); }),
-            _DrawerItem(icon: Icons.radar_rounded, label: strings.radar, enabled: weather != null, onTap: weather == null ? null : () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => RadarScreen(latitude: weather.latitude, longitude: weather.longitude, cityName: weather.cityName, apiKey: provider.apiKey))); }),
+            _DrawerItem(icon: Icons.radar_rounded, label: strings.radar, enabled: weather != null, onTap: weather == null ? null : () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => RadarScreen(latitude: weather.latitude, longitude: weather.longitude, cityName: weather.cityName, weatherApiBaseUrl: provider.weatherApiBaseUrl))); }),
             _DrawerItem(icon: Icons.notifications_active_outlined, label: strings.weatherAlerts, onTap: () => _showAlerts(context)),
             const Padding(padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10), child: Divider(color: Color(0x33705AD6))),
             _DrawerItem(icon: Icons.settings_rounded, label: strings.settings, onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())); }),

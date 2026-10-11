@@ -42,7 +42,8 @@ void callbackDispatcher() {
 class BackgroundWeatherService {
   BackgroundWeatherService._();
 
-  static const _apiKeyKey = 'background_weather_api_key';
+  static const _apiBaseUrlKey = 'weather_api_base_url';
+  static const _legacyApiKeyKey = 'background_weather_api_key';
   static const _languageKey = 'app_language';
   static const _locationLatKey = 'last_location_lat';
   static const _locationLonKey = 'last_location_lon';
@@ -54,10 +55,16 @@ class BackgroundWeatherService {
   static const _channelDescription =
       'Notifies you when there is a sudden change in the weather';
 
-  static Future<void> initialize(String apiKey) async {
+  static Future<void> removeLegacyApiKey() async {
     final prefs = await SharedPreferences.getInstance();
-    if (apiKey.trim().isNotEmpty) {
-      await prefs.setString(_apiKeyKey, apiKey.trim());
+    await prefs.remove(_legacyApiKeyKey);
+  }
+
+  static Future<void> initialize(String apiBaseUrl) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_legacyApiKeyKey);
+    if (apiBaseUrl.trim().isNotEmpty) {
+      await prefs.setString(_apiBaseUrlKey, apiBaseUrl.trim());
     }
 
     final enabled = prefs.getBool(_notificationsEnabledKey) ?? true;
@@ -94,8 +101,8 @@ class BackgroundWeatherService {
     final enabled = prefs.getBool(_notificationsEnabledKey) ?? true;
     if (!enabled) return;
 
-    final apiKey = prefs.getString(_apiKeyKey) ?? '';
-    if (apiKey.isEmpty) return;
+    final apiBaseUrl = prefs.getString(_apiBaseUrlKey) ?? '';
+    if (apiBaseUrl.isEmpty) return;
 
     final language = prefs.getString(_languageKey) ?? 'en';
     final locations = <_CheckLocation>[];
@@ -145,7 +152,7 @@ class BackgroundWeatherService {
     var changed = false;
 
     for (final location in locations) {
-      final weather = await _fetch(location.lat, location.lon, apiKey);
+      final weather = await _fetch(location.lat, location.lon, apiBaseUrl);
       if (weather == null) continue;
 
       final key =
@@ -215,9 +222,24 @@ class BackgroundWeatherService {
   }
 
   static Future<Map<String, dynamic>?> _fetch(
-      double lat, double lon, String apiKey) async {
-    final uri = Uri.parse(
-      'https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&units=metric&appid=$apiKey',
+      double lat, double lon, String apiBaseUrl) async {
+    final baseUri = Uri.tryParse(apiBaseUrl);
+    if (baseUri == null ||
+        baseUri.scheme != 'https' ||
+        !baseUri.hasAuthority ||
+        baseUri.userInfo.isNotEmpty ||
+        (baseUri.path.isNotEmpty && baseUri.path != '/') ||
+        baseUri.hasQuery ||
+        baseUri.hasFragment) {
+      return null;
+    }
+    final uri = baseUri.replace(
+      path: '/data/2.5/weather',
+      queryParameters: {
+        'lat': '$lat',
+        'lon': '$lon',
+        'units': 'metric',
+      },
     );
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 15));
@@ -239,8 +261,8 @@ class BackgroundWeatherService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notificationsEnabledKey, enabled);
     if (enabled) {
-      final apiKey = prefs.getString(_apiKeyKey) ?? '';
-      if (apiKey.isNotEmpty) await initialize(apiKey);
+      final apiBaseUrl = prefs.getString(_apiBaseUrlKey) ?? '';
+      if (apiBaseUrl.isNotEmpty) await initialize(apiBaseUrl);
     } else {
       await Workmanager().cancelByUniqueName('my-weather-weather-check');
     }

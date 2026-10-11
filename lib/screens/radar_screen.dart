@@ -89,14 +89,14 @@ class RadarScreen extends StatefulWidget {
   final double latitude;
   final double longitude;
   final String cityName;
-  final String apiKey;
+  final String weatherApiBaseUrl;
 
   const RadarScreen({
     super.key,
     required this.latitude,
     required this.longitude,
     required this.cityName,
-    required this.apiKey,
+    required this.weatherApiBaseUrl,
   });
 
   @override
@@ -140,7 +140,7 @@ class _RadarScreenState extends State<RadarScreen> {
                 opacity: 0.65,
                 child: TileLayer(
                   urlTemplate:
-                      'https://tile.openweathermap.org/map/${_selectedLayer.tileId}/{z}/{x}/{y}.png?appid=${widget.apiKey}',
+                      '${widget.weatherApiBaseUrl.replaceFirst(RegExp(r'/+$'), '')}/map/${_selectedLayer.tileId}/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.weather_app',
                 ),
               ),

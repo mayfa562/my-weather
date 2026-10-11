@@ -19,32 +19,55 @@ real-time severe-weather warning service.
 
 - Flutter SDK
 - An OpenWeatherMap API key for current weather and forecast data
+- Node.js 20+ and a Cloudflare account to deploy the API proxy
 
-## Run locally
+## Configure the API proxy
 
-1. Clone this repository and change into the project directory.
-2. Create the local environment file from the example:
+The OpenWeatherMap key belongs in the Cloudflare Worker secret, **not** in the
+Flutter app or this repository. The proxy restricts upstream paths and request
+parameters and rate-limits each Cloudflare client IP to 100 requests per minute.
+The endpoint is still public: this rate limit is an abuse deterrent, not user
+authentication or a guarantee against quota exhaustion. Monitor your
+OpenWeatherMap usage and Cloudflare Worker analytics.
+Wrangler currently labels Worker rate-limit bindings experimental; verify the
+limit is active in Cloudflare after deployment.
+
+If an earlier APK contained your OpenWeatherMap key, assume that key is
+compromised: revoke it and create a new key before continuing. Removing it from
+the new app cannot remove it from APKs that were already distributed.
+
+1. Create a Cloudflare Worker and select `worker/` as its project directory, or
+   deploy from a local clone using Wrangler:
+
+   ```powershell
+   cd worker
+   npm install
+   npx wrangler login
+   ```
+
+2. Add the provider key as an encrypted Worker secret and deploy:
+
+   ```powershell
+   npx wrangler secret put OPENWEATHER_API_KEY
+   npm run deploy
+   ```
+
+   Enter the key only at Wrangler's prompt. Do not put it in `wrangler.toml`,
+   source code, command history, or Flutter build arguments.
+3. Copy the deployed Worker URL (for example,
+   `https://my-weather-api.<your-account>.workers.dev`) and configure Flutter
+   with that **public URL**, which is not a secret:
 
    ```sh
-   cp .env.example .env
+   flutter run --dart-define=WEATHER_API_BASE_URL=https://my-weather-api.<your-account>.workers.dev
    ```
 
-   On Windows PowerShell, use `Copy-Item .env.example .env`.
-3. Put your OpenWeatherMap key in `.env`:
-
-   ```text
-   OPENWEATHER_API_KEY=your_api_key_here
-   ```
-4. Fetch dependencies and run the app:
-
-   ```sh
-   flutter pub get
-   flutter run
-   ```
-
-The `.env` file is intentionally ignored by Git. Never commit a real API key.
-Because this is a client app, a key bundled into a release can be extracted;
-use an appropriately restricted key and monitor its usage.
+To test the Worker locally, copy `worker/.dev.vars.example` to
+`worker/.dev.vars`, enter a development API key there, and run `npm run dev`
+from `worker/`. The `.dev.vars` file is ignored by Git.
+`worker/wrangler.toml` configures a per-client-IP limit of 100 requests per
+minute. The public Worker URL cannot authenticate app users; set appropriate
+Cloudflare protections and billing/usage alerts before wider distribution.
 
 ## Notifications
 
@@ -59,13 +82,27 @@ Android WorkManager and iOS background scheduling do not guarantee an exact
 check interval or delivery time. See
 [BACKGROUND_ALERTS_SETUP.md](BACKGROUND_ALERTS_SETUP.md) for platform details.
 
-## Build an Android APK
+## Sign an Android release
 
-With `.env` configured, build a release APK with:
+Create and securely back up a **new** upload keystore. Never commit the
+keystore or its passwords. From `android/`, create the keystore with:
 
 ```sh
-flutter build apk --release
+keytool -genkey -v -keystore app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
 ```
 
-The APK is generated under `build/app/outputs/flutter-apk/` and is not tracked
-in this source repository.
+Copy `android/key.properties.example` to `android/key.properties` and replace
+the example values with the keystore path, alias, and passwords. Both local
+files are ignored by Git. Keep a backup of this upload key: app updates signed
+with a different key cannot replace an existing installation (unless Google
+Play's app signing key-recovery process applies).
+
+Set the public Worker URL, then build:
+
+```sh
+flutter build appbundle --release --dart-define=WEATHER_API_BASE_URL=https://my-weather-api.<your-account>.workers.dev
+```
+
+For a locally sideloaded APK, use `flutter build apk --release` with the same
+`--dart-define`. Release builds now fail if the upload keystore is not
+configured; the debug signing key is never used as a release fallback.

@@ -1,8 +1,25 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+val releaseSigningPropertiesFile = rootProject.file("key.properties")
+val releaseSigningProperties = Properties().apply {
+    if (releaseSigningPropertiesFile.exists()) {
+        releaseSigningPropertiesFile.inputStream().use { load(it) }
+    }
+}
+val releaseKeyStorePath = releaseSigningProperties.getProperty("storeFile")
+val releaseSigningConfigured = listOf(
+    releaseKeyStorePath,
+    releaseSigningProperties.getProperty("keyAlias"),
+    releaseSigningProperties.getProperty("keyPassword"),
+    releaseSigningProperties.getProperty("storePassword"),
+).all { !it.isNullOrBlank() } &&
+    releaseKeyStorePath?.let { rootProject.file(it).isFile } == true
 
 android {
     namespace = "com.example.weather_app"
@@ -28,19 +45,40 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            if (releaseSigningConfigured) {
+                storeFile = rootProject.file(releaseKeyStorePath!!)
+                storePassword = releaseSigningProperties.getProperty("storePassword")
+                keyAlias = releaseSigningProperties.getProperty("keyAlias")
+                keyPassword = releaseSigningProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
 
- dependencies {
-       
-        coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+tasks.configureEach {
+    if (name == "assembleRelease" || name == "bundleRelease") {
+        doFirst {
+            if (!releaseSigningConfigured) {
+                throw GradleException(
+                    "Release signing is not configured. Create android/key.properties " +
+                        "from android/key.properties.example and provide your release keystore."
+                )
+            }
+        }
     }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
 
 kotlin {
     compilerOptions {

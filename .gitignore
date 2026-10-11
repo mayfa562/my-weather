@@ -35,9 +35,16 @@ migrate_working_dir/
 
 # Local configuration and generated output
 /.env
+**/.dev.vars
+**/.dev.vars.*
+!**/.dev.vars.example
 /android/local.properties
+/android/key.properties
+/android/app/*.jks
+/android/app/*.keystore
 /android/.gradle/
-/node_modules/
+**/node_modules/
+**/.wrangler/
 /.dist/
 /buildlog.txt
 /gradle_debug.txt
