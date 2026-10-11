@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@meteocons/lottie": "^0.1.0",
+    "@meteocons/svg": "^0.1.0"
+  }
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the middle stop of AppGradients.hero in lib/theme/app_theme.dart -->
+    <color name="splash_background">#5B35D5</color>
+    <color name="ic_launcher_background">#5B35D5</color>
+</resources>
